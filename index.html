@@ -111,6 +111,37 @@
     font-size: 16px;
     line-height: 1;
   }
+  .btn-sm {
+    position: relative;
+  }
+  /* 상단 버튼 5개가 좁은 폰 폭에서도 한 줄에 들어가도록 */
+  @media (max-width: 480px) {
+    .header-actions { gap: 4px; }
+    .btn-sm { padding: 6px 7px; font-size: 12.5px; letter-spacing: -0.3px; }
+    .btn-sm.btn-icon { width: 30px; font-size: 15px; }
+  }
+  @media (max-width: 370px) {
+    .header-date { font-size: 11px; }
+    .btn-sm { padding: 5px 6px; font-size: 11.5px; letter-spacing: -0.4px; }
+    .btn-sm.btn-icon { width: 28px; font-size: 14px; }
+  }
+  .notice-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+    box-shadow: 0 0 0 1.5px #fff;
+  }
+  .notice-badge[hidden] { display: none; }
   .search-wrap {
     position: relative;
     max-width: 680px;
@@ -471,6 +502,108 @@
     font-weight: 800;
     cursor: pointer;
   }
+  /* ── 공지 ── */
+  .notice-write {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .notice-input {
+    width: 100%;
+    min-height: 74px;
+    max-height: 24vh;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: none;
+    background: #f9fafb;
+    outline: none;
+  }
+  .notice-input:focus { border-color: var(--primary); background: #fff; }
+  .notice-write-row {
+    display: flex;
+    gap: 8px;
+  }
+  .notice-author {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0 12px;
+    font-size: 14.5px;
+    background: #fff;
+    outline: none;
+  }
+  .notice-author:focus { border-color: var(--primary); }
+  .btn-notice-add {
+    flex: 0 0 auto;
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .btn-notice-add:disabled { opacity: 0.6; cursor: default; }
+  .notice-list {
+    flex: 1;
+    min-height: 70px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .notice-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #fff;
+  }
+  .notice-body { flex: 1; min-width: 0; }
+  .notice-content {
+    font-size: 14.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .notice-meta {
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--sub);
+  }
+  .notice-del {
+    flex: 0 0 auto;
+    border: none;
+    background: transparent;
+    color: #b0b8c1;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 2px 2px;
+    cursor: pointer;
+  }
+  .notice-state {
+    text-align: center;
+    color: var(--sub);
+    font-size: 13.5px;
+    line-height: 1.5;
+    white-space: pre-line;
+    padding: 20px 8px;
+  }
+  .notice-state.error { color: var(--danger); }
   .toast {
     position: fixed;
     left: 50%;
@@ -572,6 +705,7 @@
   <div class="top-row">
     <div class="header-date" id="headerDate"></div>
     <div class="header-actions">
+      <button class="btn-sm" id="btnNotice">📢 공지<span class="notice-badge" id="noticeBadge" hidden>0</span></button>
       <button class="btn-sm" id="btnOnlySelected">담은 것만</button>
       <button class="btn-sm" id="btnEditMode">편집</button>
       <button class="btn-sm primary" id="btnOpenAdd">+ 품목</button>
@@ -637,6 +771,24 @@
       <button class="calc-key zero" data-k="0">0</button>
       <button class="calc-key" data-k=".">.</button>
     </div>
+  </div>
+</div>
+
+<!-- 공지 모달 -->
+<div class="modal-backdrop" id="noticeModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>📢 공지</span>
+      <button class="btn-sm" id="closeNotice">닫기</button>
+    </div>
+    <div class="notice-write">
+      <textarea class="notice-input" id="noticeInput" placeholder="공지할 내용을 입력하세요" maxlength="1000"></textarea>
+      <div class="notice-write-row">
+        <input type="text" class="notice-author" id="noticeAuthor" placeholder="작성자 (선택)" maxlength="20" />
+        <button class="btn-notice-add" id="btnAddNotice">등록</button>
+      </div>
+    </div>
+    <div class="notice-list" id="noticeList"></div>
   </div>
 </div>
 
@@ -1144,6 +1296,183 @@ async function sendToSheet() {
 }
 
 document.getElementById("btnSheetMain").onclick = sendToSheet;
+
+// ── 공지 (공유 시트 '공지' 탭 · 누구나 작성/조회/삭제) ──
+const NOTICE_MAX_LEN = 1000;
+let notices = [];
+let noticeLoading = false;
+let noticeError = "";
+
+function noticeListUrl() {
+  return SHEET_ENDPOINT +
+    (SHEET_ENDPOINT.indexOf("?") >= 0 ? "&" : "?") +
+    "action=notices&ts=" + Date.now();
+}
+
+async function fetchNotices() {
+  const res = await fetch(noticeListUrl(), { method: "GET", cache: "no-store" });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const out = await res.json();
+  if (!out || !out.ok) throw new Error((out && out.error) || "불러오기 실패");
+  return Array.isArray(out.notices) ? out.notices : [];
+}
+
+async function postNotice(payload) {
+  const res = await fetch(SHEET_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  const out = await res.json();
+  if (!out || !out.ok) throw new Error((out && out.error) || "저장 실패");
+  return out;
+}
+
+function updateNoticeBadge() {
+  const badge = document.getElementById("noticeBadge");
+  if (!badge) return;
+  if (notices.length > 0) {
+    badge.hidden = false;
+    badge.textContent = notices.length > 9 ? "9+" : String(notices.length);
+  } else {
+    badge.hidden = true;
+  }
+}
+
+function noticeModalOpen() {
+  return document.getElementById("noticeModal").classList.contains("open");
+}
+
+function renderNoticeList() {
+  const listEl = document.getElementById("noticeList");
+  listEl.innerHTML = "";
+
+  if (noticeLoading) {
+    const el = document.createElement("div");
+    el.className = "notice-state";
+    el.textContent = "공지를 불러오는 중...";
+    listEl.appendChild(el);
+    return;
+  }
+
+  if (noticeError) {
+    const el = document.createElement("div");
+    el.className = "notice-state error";
+    el.textContent = noticeError;
+    const retry = document.createElement("button");
+    retry.className = "btn-sm";
+    retry.textContent = "다시 시도";
+    retry.style.marginTop = "10px";
+    retry.onclick = () => loadNotices(true);
+    el.appendChild(retry);
+    listEl.appendChild(el);
+    return;
+  }
+
+  if (!notices.length) {
+    const el = document.createElement("div");
+    el.className = "notice-state";
+    el.textContent = "아직 등록된 공지가 없어요.\n첫 공지를 남겨 보세요!";
+    listEl.appendChild(el);
+    return;
+  }
+
+  notices.forEach(n => {
+    const item = document.createElement("div");
+    item.className = "notice-item";
+
+    const body = document.createElement("div");
+    body.className = "notice-body";
+    const content = document.createElement("div");
+    content.className = "notice-content";
+    content.textContent = n.text;
+    const meta = document.createElement("div");
+    meta.className = "notice-meta";
+    meta.textContent = (n.author ? n.author + " · " : "") + (n.time || "");
+    body.append(content, meta);
+
+    const del = document.createElement("button");
+    del.className = "notice-del";
+    del.textContent = "삭제";
+    del.onclick = () => deleteNotice(n);
+
+    item.append(body, del);
+    listEl.appendChild(item);
+  });
+}
+
+async function loadNotices(showLoading) {
+  if (showLoading) {
+    noticeLoading = true;
+    noticeError = "";
+    renderNoticeList();
+  }
+  try {
+    notices = await fetchNotices();
+    noticeError = "";
+  } catch (err) {
+    console.error(err);
+    if (showLoading) noticeError = "공지를 불러오지 못했어요.\n네트워크를 확인하고 다시 시도해 주세요.";
+  } finally {
+    noticeLoading = false;
+    updateNoticeBadge();
+    if (noticeModalOpen()) renderNoticeList();
+  }
+}
+
+async function addNotice() {
+  const input = document.getElementById("noticeInput");
+  const authorEl = document.getElementById("noticeAuthor");
+  const text = input.value.trim();
+  const author = authorEl.value.trim();
+  if (!text) { showToast("공지 내용을 입력해 주세요"); input.focus(); return; }
+
+  const btn = document.getElementById("btnAddNotice");
+  btn.disabled = true;
+  btn.textContent = "등록 중...";
+  try {
+    await postNotice({ action: "add_notice", text: text.slice(0, NOTICE_MAX_LEN), author });
+    input.value = "";
+    authorEl.value = "";
+    await loadNotices(true);
+    showToast("공지를 등록했어요");
+  } catch (err) {
+    console.error(err);
+    showToast("등록이 안 됐어요. 잠시 후 다시 눌러 주세요");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "등록";
+  }
+}
+
+async function deleteNotice(n) {
+  const preview = n.text.length > 40 ? n.text.slice(0, 40) + "…" : n.text;
+  if (!confirm(`이 공지를 삭제할까요?\n\n${preview}`)) return;
+  try {
+    await postNotice({ action: "delete_notice", id: n.id });
+    await loadNotices(true);
+    showToast("공지를 삭제했어요");
+  } catch (err) {
+    console.error(err);
+    showToast("삭제가 안 됐어요. 잠시 후 다시 눌러 주세요");
+  }
+}
+
+document.getElementById("btnNotice").onclick = () => {
+  document.getElementById("noticeInput").value = "";
+  document.getElementById("noticeAuthor").value = "";
+  document.getElementById("noticeModal").classList.add("open");
+  loadNotices(true);
+};
+document.getElementById("closeNotice").onclick = () =>
+  document.getElementById("noticeModal").classList.remove("open");
+document.getElementById("noticeModal").onclick = (e) => {
+  if (e.target && e.target.id === "noticeModal") {
+    document.getElementById("noticeModal").classList.remove("open");
+  }
+};
+document.getElementById("btnAddNotice").onclick = addNotice;
+loadNotices(false);   // 배지용으로 조용히 미리 불러오기
 
 // ── 오늘 안내 팝업 (요일 + 매월 15일·말일 재고조사) ────
 function closeDayNotice() {
