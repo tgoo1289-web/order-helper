@@ -565,7 +565,11 @@ function buildOrderText(filterGroup = null) {
     byVendor[key].push(`${it.name} ${qty}${unit}`);
   });
 
-  return Object.values(byVendor).flat().join("\n");
+  const now = new Date();
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  const dateLine = `${now.getMonth() + 1}/${now.getDate()} (${days[now.getDay()]})`;
+
+  return [dateLine, ...Object.values(byVendor).flat()].join("\n");
 }
 
 function renderTabs() {
