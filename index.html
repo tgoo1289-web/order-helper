@@ -1362,16 +1362,17 @@ function renderNoticeList() {
   }
 
   if (noticeError) {
-    const el = document.createElement("div");
-    el.className = "notice-state error";
-    el.textContent = noticeError;
+    const wrap = document.createElement("div");
+    const msg = document.createElement("div");
+    msg.className = "notice-state error";
+    msg.textContent = noticeError;
     const retry = document.createElement("button");
     retry.className = "btn-sm";
     retry.textContent = "다시 시도";
-    retry.style.marginTop = "10px";
+    retry.style.cssText = "display:block;margin:0 auto";
     retry.onclick = () => loadNotices(true);
-    el.appendChild(retry);
-    listEl.appendChild(el);
+    wrap.append(msg, retry);
+    listEl.appendChild(wrap);
     return;
   }
 
