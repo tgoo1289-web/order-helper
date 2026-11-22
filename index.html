@@ -44,10 +44,24 @@
     gap: 8px;
     margin-bottom: 10px;
   }
+  .title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
   .title {
     font-size: 18px;
     font-weight: 700;
     letter-spacing: -0.3px;
+    white-space: nowrap;
+  }
+  .header-date {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sub);
+    letter-spacing: -0.1px;
+    white-space: nowrap;
   }
   .header-actions {
     display: flex;
@@ -385,7 +399,10 @@
 
 <header>
   <div class="top-row">
-    <div class="title">📦 발주 도우미</div>
+    <div class="title-wrap">
+      <div class="title">📦 발주 도우미</div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
     <div class="header-actions">
       <button class="btn-sm" id="btnOnlySelected">담은 것만</button>
       <button class="btn-sm" id="btnEditMode">편집</button>
@@ -565,11 +582,17 @@ function buildOrderText(filterGroup = null) {
     byVendor[key].push(`${it.name} ${qty}${unit}`);
   });
 
+  return Object.values(byVendor).flat().join("\n");
+}
+
+function todayLabel() {
   const now = new Date();
   const days = ["일", "월", "화", "수", "목", "금", "토"];
-  const dateLine = `${now.getMonth() + 1}/${now.getDate()} (${days[now.getDay()]})`;
+  return `${now.getMonth() + 1}/${now.getDate()} (${days[now.getDay()]})`;
+}
 
-  return [dateLine, ...Object.values(byVendor).flat()].join("\n");
+function renderHeaderDate() {
+  document.getElementById("headerDate").textContent = todayLabel();
 }
 
 function renderTabs() {
@@ -782,6 +805,7 @@ document.getElementById("confirmAdd").onclick = () => {
   showToast(`'${name}' 추가했어요`);
 };
 
+renderHeaderDate();
 renderAll();
 </script>
 </body>
