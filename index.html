@@ -37,24 +37,38 @@
     border-bottom: 1px solid var(--line);
     padding: 12px 14px 10px;
   }
+  .mode-switch {
+    display: flex;
+    gap: 3px;
+    background: #eef1f4;
+    border-radius: 11px;
+    padding: 3px;
+    margin-bottom: 10px;
+  }
+  .mode-btn {
+    flex: 1;
+    height: 38px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--sub);
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .mode-btn.active {
+    background: #fff;
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.09);
+  }
+  body.mode-stock .mode-btn.active { color: var(--primary); }
   .top-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 10px;
-  }
-  .title-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-  .title {
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-    white-space: nowrap;
   }
   .header-date {
     font-size: 12.5px;
@@ -66,6 +80,7 @@
   .header-actions {
     display: flex;
     gap: 6px;
+    flex-shrink: 0;
   }
   .btn-sm {
     border: 1px solid var(--line);
@@ -75,12 +90,23 @@
     padding: 6px 10px;
     font-size: 13px;
     font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
     cursor: pointer;
   }
   .btn-sm.primary {
     background: var(--primary-weak);
     color: var(--primary);
     border-color: transparent;
+  }
+  .btn-icon {
+    width: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
   }
   .search-wrap {
     position: relative;
@@ -305,6 +331,20 @@
     font-weight: 700;
     cursor: pointer;
   }
+  .btn-group-copy {
+    display: none;
+    flex: 0 0 auto;
+    height: 46px;
+    padding: 0 11px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+  }
   .btn-copy-all {
     flex: 1.5;
     height: 46px;
@@ -370,23 +410,30 @@
     padding: 0 12px;
     font-size: 15px;
   }
-  .btn-sheet {
-    width: 100%;
+  .btn-sheet-main {
+    display: none;
+    flex: 1;
     height: 46px;
     border-radius: 12px;
-    border: 1px solid var(--primary);
-    background: var(--primary-weak);
-    color: var(--primary);
+    border: none;
+    background: var(--primary);
+    color: #fff;
     font-size: 15px;
     font-weight: 800;
     cursor: pointer;
   }
-  .btn-sheet:disabled { opacity: 0.6; cursor: default; }
+  .btn-sheet-main:disabled { opacity: 0.6; cursor: default; }
+  body.mode-stock .btn-preview,
+  body.mode-stock .btn-group-copy,
+  body.mode-stock .btn-copy-all { display: none !important; }
+  body.mode-stock .btn-sheet-main { display: block; }
+  body.mode-stock .btn-reset { padding: 0 12px; font-size: 13px; }
   .notice-text {
     margin: 0;
     font-size: 15px;
     line-height: 1.55;
     color: var(--text);
+    white-space: pre-line;
   }
   .notice-actions {
     display: flex;
@@ -437,20 +484,88 @@
     padding: 40px 16px;
     font-size: 14px;
   }
+
+  /* ── 미니 계산기 ── */
+  .calc-display {
+    border-radius: 12px;
+    background: #f9fafb;
+    border: 1px solid var(--line);
+    padding: 12px 14px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+  }
+  .calc-expr {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: var(--text);
+    word-break: break-all;
+    text-align: right;
+    max-width: 100%;
+  }
+  .calc-result {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary);
+    min-height: 19px;
+    word-break: break-all;
+    text-align: right;
+  }
+  .calc-keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .calc-key {
+    height: 54px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .calc-key:active { background: #eef1f4; }
+  .calc-key.op {
+    background: #f2f7ff;
+    color: var(--primary);
+    border-color: transparent;
+  }
+  .calc-key.fn {
+    background: #f2f4f6;
+    color: var(--sub);
+    font-size: 17px;
+    border-color: transparent;
+  }
+  .calc-key.eq {
+    grid-row: span 2;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+  }
+  .calc-key.zero { grid-column: span 2; }
 </style>
 </head>
 <body>
 
 <header>
+  <div class="mode-switch" id="modeSwitch">
+    <button class="mode-btn active" data-mode="order">발주</button>
+    <button class="mode-btn" data-mode="stock">재고조사</button>
+  </div>
   <div class="top-row">
-    <div class="title-wrap">
-      <div class="title">📦 발주 도우미</div>
-      <div class="header-date" id="headerDate"></div>
-    </div>
+    <div class="header-date" id="headerDate"></div>
     <div class="header-actions">
       <button class="btn-sm" id="btnOnlySelected">담은 것만</button>
       <button class="btn-sm" id="btnEditMode">편집</button>
       <button class="btn-sm primary" id="btnOpenAdd">+ 품목</button>
+      <button class="btn-sm btn-icon" id="btnCalc" aria-label="계산기" title="계산기">🧮</button>
     </div>
   </div>
   <div class="search-wrap">
@@ -464,20 +579,54 @@
 
 <div class="bottom-bar">
   <button class="btn-reset" id="btnReset">초기화</button>
-  <button class="btn-preview" id="btnPreview">미리보기</button>
+  <button class="btn-group-copy" id="btnCopyGroup">이 거래처만 복사 (0)</button>
   <button class="btn-copy-all" id="btnCopyAll">카톡 복사 (0)</button>
+  <button class="btn-sheet-main" id="btnSheetMain">📊 시트로 저장 (0)</button>
 </div>
 
 <!-- 미리보기 모달 -->
 <div class="modal-backdrop" id="previewModal">
   <div class="modal">
     <div class="modal-title">
-      <span>카톡 발주 문구</span>
+      <span id="previewTitle">카톡 발주 문구</span>
       <button class="btn-sm" id="closePreview">닫기</button>
     </div>
-    <textarea class="preview-box" id="previewText" readonly></textarea>
-    <button class="btn-copy-all" id="modalCopyBtn" style="width:100%">전체 복사하기</button>
-    <button class="btn-sheet" id="btnSendSheet">📊 시트로 저장</button>
+    <textarea class="preview-box" id="previewText"></textarea>
+    <button class="btn-copy-all" id="modalCopyBtn" style="width:100%">복사하기</button>
+  </div>
+</div>
+
+<!-- 계산기 모달 -->
+<div class="modal-backdrop" id="calcModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>계산기</span>
+      <button class="btn-sm" id="closeCalc">닫기</button>
+    </div>
+    <div class="calc-display">
+      <div class="calc-expr" id="calcExpr">0</div>
+      <div class="calc-result" id="calcResult"></div>
+    </div>
+    <div class="calc-keys" id="calcKeys">
+      <button class="calc-key fn" data-k="C">C</button>
+      <button class="calc-key fn" data-k="back">⌫</button>
+      <button class="calc-key op" data-k="÷">÷</button>
+      <button class="calc-key op" data-k="×">×</button>
+      <button class="calc-key" data-k="7">7</button>
+      <button class="calc-key" data-k="8">8</button>
+      <button class="calc-key" data-k="9">9</button>
+      <button class="calc-key op" data-k="−">−</button>
+      <button class="calc-key" data-k="4">4</button>
+      <button class="calc-key" data-k="5">5</button>
+      <button class="calc-key" data-k="6">6</button>
+      <button class="calc-key op" data-k="+">+</button>
+      <button class="calc-key" data-k="1">1</button>
+      <button class="calc-key" data-k="2">2</button>
+      <button class="calc-key" data-k="3">3</button>
+      <button class="calc-key eq" data-k="=">=</button>
+      <button class="calc-key zero" data-k="0">0</button>
+      <button class="calc-key" data-k=".">.</button>
+    </div>
   </div>
 </div>
 
@@ -561,7 +710,9 @@ const DEFAULT_ITEMS = [
 ];
 
 const STORAGE_ITEMS_KEY = "daru_order_items_v1";
-const STORAGE_QTYS_KEY = "daru_order_qtys_v1";
+const STORAGE_QTYS_KEY = "daru_order_qtys_v1";            // 발주 모드 수량
+const STORAGE_STOCK_KEY = "daru_inventory_state_v1";       // 재고조사 모드 수량
+const STORAGE_MODE_KEY = "daru_app_mode_v1";               // 마지막으로 쓰던 모드
 const GROUPS = ["전체", "여주농산", "청량", "소스류", "수산", "인터넷발주", "주류/음료", "식용유/김", "육류"];
 const UNITS = ["", "개", "박스", "팩", "봉", "병", "캔", "kg"];
 
@@ -599,18 +750,21 @@ const HOLIDAYS = {
 // 발주도우미 → 공유 시트 저장 (Apps Script 웹앱)
 const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbzar1vhlKi2rHZHWIkVganu-gi-kb-EBE_DOJ11ABY3WicJt8_V4_Vl4XYKXAiMFwyomA/exec";
 
-// 요일별 안내 팝업 (수: 공산품 / 목: 주말 발주 마지막)
+// 안내 팝업 (수: 공산품 / 목: 주말 발주 마지막 / 매월 15일·말일: 재고조사)
 const NOTICE_HIDE_KEY = "daru_order_day_notice_hidden_v1";
 const DAY_NOTICES = {
   3: { title: "수요일 안내", text: "오늘은 공산품 채우는 날이에요." },
   4: { title: "목요일 안내", text: "오늘은 주말 발주 마지막 날이에요." }
 };
+const STOCK_NOTICE_TEXT = "재고조사 안내: 오늘은 재고조사 날이에요!";
 
 let items = loadJSON(STORAGE_ITEMS_KEY, DEFAULT_ITEMS).map((it, idx) => ({
   id: it.id || `${it.group}_${it.name}_${idx}`,
   ...it
 }));
-let qtys = loadJSON(STORAGE_QTYS_KEY, {});
+const orderQtys = loadJSON(STORAGE_QTYS_KEY, {});   // 발주 수량 (기존 키 그대로)
+const stockQtys = loadJSON(STORAGE_STOCK_KEY, {});   // 재고조사 수량 (별도 키)
+let mode = localStorage.getItem(STORAGE_MODE_KEY) === "stock" ? "stock" : "order";
 let activeGroup = "전체";
 let onlySelected = false;
 let searchText = "";
@@ -623,20 +777,26 @@ function loadJSON(key, fallback) {
 }
 function saveState() {
   localStorage.setItem(STORAGE_ITEMS_KEY, JSON.stringify(items));
-  localStorage.setItem(STORAGE_QTYS_KEY, JSON.stringify(qtys));
+  localStorage.setItem(STORAGE_QTYS_KEY, JSON.stringify(orderQtys));
+  localStorage.setItem(STORAGE_STOCK_KEY, JSON.stringify(stockQtys));
 }
 
+// 모드별 수량 저장소 — 발주/재고조사 수량이 섞이지 않도록 완전히 분리
+function qtysRef() { return mode === "stock" ? stockQtys : orderQtys; }
+function isStock() { return mode === "stock"; }
+
 function getEntry(id) {
-  return qtys[id] || { qty: 0, unit: "" };
+  return qtysRef()[id] || { qty: 0, unit: "" };
 }
 function setQty(id, qty, unit) {
   const cleanQty = Math.max(0, Number(qty) || 0);
+  const store = qtysRef();
   const prev = getEntry(id);
   const nextUnit = unit !== undefined ? unit : prev.unit;
   if (cleanQty === 0 && !nextUnit) {
-    delete qtys[id];
+    delete store[id];
   } else {
-    qtys[id] = { qty: cleanQty, unit: nextUnit };
+    store[id] = { qty: cleanQty, unit: nextUnit };
   }
   saveState();
   renderAll();
@@ -651,7 +811,7 @@ function showToast(msg) {
 }
 
 async function copyText(text) {
-  if (!text) { showToast("선택된 품목이 없어요"); return; }
+  if (!text || !text.trim()) { showToast("선택된 품목이 없어요"); return; }
   try {
     await navigator.clipboard.writeText(text);
     showToast("카톡에 붙여넣기 좋게 복사했어요!");
@@ -664,6 +824,7 @@ async function copyText(text) {
     ta.remove();
     showToast("복사 완료!");
   }
+  document.getElementById("previewModal").classList.remove("open");
 }
 
 function buildOrderText(filterGroup = null) {
@@ -754,11 +915,11 @@ function renderList() {
     const selectedInGroup = groupItems.filter(it => getEntry(it.id).qty > 0).length;
     header.innerHTML = `
       <span class="group-name">${g} (${groupItems.length})</span>
-      ${selectedInGroup > 0 ? `<button class="group-copy">이 거래처만 복사 (${selectedInGroup})</button>` : ""}
+      ${!isStock() && selectedInGroup > 0 ? `<button class="group-copy">이 거래처만 복사 (${selectedInGroup})</button>` : ""}
     `;
     const copyBtn = header.querySelector(".group-copy");
     if (copyBtn) {
-      copyBtn.onclick = () => copyText(buildOrderText(g));
+      copyBtn.onclick = () => openPreview(g);
     }
     card.appendChild(header);
 
@@ -812,7 +973,8 @@ function renderList() {
       delBtn.onclick = () => {
         if (confirm(`'${it.name}' 품목을 목록에서 삭제할까요?`)) {
           items = items.filter(x => x.id !== it.id);
-          delete qtys[it.id];
+          delete orderQtys[it.id];
+          delete stockQtys[it.id];
           saveState();
           renderAll();
         }
@@ -830,6 +992,36 @@ function renderList() {
 function renderBottom() {
   const count = items.filter(it => getEntry(it.id).qty > 0).length;
   document.getElementById("btnCopyAll").textContent = `카톡 복사 (${count})`;
+  document.getElementById("btnSheetMain").textContent = `📊 시트로 저장 (${count})`;
+
+  const groupBtn = document.getElementById("btnCopyGroup");
+  const groupCount = activeGroup === "전체" ? 0
+    : items.filter(it => it.group === activeGroup && getEntry(it.id).qty > 0).length;
+  if (!isStock() && groupCount > 0) {
+    groupBtn.style.display = "inline-flex";
+    groupBtn.textContent = `이 거래처만 복사 (${groupCount})`;
+  } else {
+    groupBtn.style.display = "none";
+  }
+}
+
+function renderModeUi() {
+  document.body.classList.toggle("mode-stock", isStock());
+  document.querySelectorAll(".mode-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
+  });
+}
+
+function setMode(next) {
+  const target = next === "stock" ? "stock" : "order";
+  if (target === mode) return;
+  mode = target;
+  localStorage.setItem(STORAGE_MODE_KEY, mode);
+  renderModeUi();
+  renderAll();
+  searchInput.value = "";
+  searchText = "";
+  searchClear.style.display = "none";
 }
 
 function renderAll() {
@@ -868,26 +1060,34 @@ document.getElementById("btnEditMode").onclick = (e) => {
 document.getElementById("btnReset").onclick = () => {
   const count = items.filter(it => getEntry(it.id).qty > 0).length;
   if (count === 0) { showToast("초기화할 수량이 없어요"); return; }
-  if (confirm(`입력된 ${count}개 품목 수량을 모두 0으로 초기화할까요?`)) {
-    qtys = {};
+  const label = isStock() ? "재고조사 수량" : "입력된 발주 수량";
+  if (confirm(`${label} ${count}개 품목을 모두 0으로 초기화할까요?`)) {
+    const store = qtysRef();
+    Object.keys(store).forEach(k => delete store[k]);
     saveState();
     renderAll();
     showToast("수량을 초기화했어요");
   }
 };
 
-document.getElementById("btnCopyAll").onclick = () => copyText(buildOrderText());
+document.getElementById("btnCopyAll").onclick = () => openPreview(null);
+document.getElementById("btnCopyGroup").onclick = () => openPreview(activeGroup);
 
-document.getElementById("btnPreview").onclick = () => {
-  const txt = buildOrderText();
+// ── 미리보기 모달 (복사는 모달에서 한 번 더) ──
+function openPreview(filterGroup = null) {
+  const txt = buildOrderText(filterGroup);
   if (!txt) { showToast("먼저 수량을 1개 이상 입력해 주세요"); return; }
+  document.getElementById("previewTitle").textContent =
+    filterGroup ? `${filterGroup} 발주 문구` : "카톡 발주 문구";
   document.getElementById("previewText").value = txt;
   document.getElementById("previewModal").classList.add("open");
-};
+}
 document.getElementById("closePreview").onclick = () =>
   document.getElementById("previewModal").classList.remove("open");
-document.getElementById("modalCopyBtn").onclick = () =>
-  copyText(document.getElementById("previewText").value);
+document.getElementById("modalCopyBtn").onclick = async () => {
+  const txt = document.getElementById("previewText").value;
+  await copyText(txt);
+};
 
 // ── 공유 시트로 저장 ────────────────────────────────
 function buildSheetRows() {
@@ -900,9 +1100,10 @@ function buildSheetRows() {
 }
 
 async function sendToSheet() {
+  if (!isStock()) return; // 시트 저장은 재고조사 모드 전용
   const rows = buildSheetRows();
   if (!rows.length) {
-    showToast("먼저 수량을 1개 이상 입력해 주세요");
+    showToast("먼저 재고 수량을 1개 이상 입력해 주세요");
     return;
   }
   if (!/\/exec$/.test(SHEET_ENDPOINT)) {
@@ -910,7 +1111,7 @@ async function sendToSheet() {
     return;
   }
 
-  const btn = document.getElementById("btnSendSheet");
+  const btn = document.getElementById("btnSheetMain");
   const label = btn ? btn.textContent : "";
   if (btn) { btn.disabled = true; btn.textContent = "보내는 중..."; }
 
@@ -919,11 +1120,11 @@ async function sendToSheet() {
       method: "POST",
       // text/plain 이어야 브라우저 사전요청(preflight) 없이 Apps Script 로 전달됩니다.
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ date: dateKey(), rows })
+      body: JSON.stringify({ date: dateKey(), mode: "stock", rows })
     });
     const out = await res.json();
     if (!out || !out.ok) throw new Error((out && out.error) || "저장 실패");
-    showToast(`${out.sheet} 탭에 ${out.added}개 품목을 저장했어요!`);
+    showToast(`${out.sheet} 탭에 재고 ${out.added}개 품목을 저장했어요!`);
   } catch (err) {
     console.error(err);
     showToast("전송이 안 됐어요. 잠시 후 다시 눌러 주세요");
@@ -932,20 +1133,38 @@ async function sendToSheet() {
   }
 }
 
-document.getElementById("btnSendSheet").onclick = sendToSheet;
+document.getElementById("btnSheetMain").onclick = sendToSheet;
 
-// ── 요일별 안내 팝업 ────────────────────────────────
+// ── 오늘 안내 팝업 (요일 + 매월 15일·말일 재고조사) ────
 function closeDayNotice() {
   document.getElementById("dayNoticeModal").classList.remove("open");
 }
 
-function maybeShowDayNotice(dayIdx) {
-  const idx = typeof dayIdx === "number" ? dayIdx : new Date().getDay();
-  const notice = DAY_NOTICES[idx];
-  if (!notice) return false;
+function lastDayOfMonth(d = new Date()) {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+}
+
+function noticesForToday(d = new Date()) {
+  const list = [];
+  const day = DAY_NOTICES[d.getDay()];
+  if (day) list.push(day);
+  if (d.getDate() === 15) {
+    list.push({ title: "재고조사 안내", text: STOCK_NOTICE_TEXT });
+  }
+  if (d.getDate() === lastDayOfMonth(d)) {
+    list.push({ title: "재고조사 안내", text: "재고조사 안내: 오늘은 이번 달 마지막 날이에요!" });
+  }
+  return list;
+}
+
+function maybeShowDayNotice() {
+  const notices = noticesForToday(new Date());
+  if (!notices.length) return false;
   if (localStorage.getItem(NOTICE_HIDE_KEY) === dateKey()) return false;
-  document.getElementById("dayNoticeTitle").textContent = notice.title;
-  document.getElementById("dayNoticeText").textContent = notice.text;
+  document.getElementById("dayNoticeTitle").textContent =
+    notices.length === 1 ? notices[0].title : "오늘 안내";
+  document.getElementById("dayNoticeText").textContent =
+    notices.map(n => n.text).join("\n\n");
   document.getElementById("dayNoticeModal").classList.add("open");
   return true;
 }
@@ -960,6 +1179,95 @@ document.getElementById("dayNoticeModal").onclick = (e) => {
   if (e.target && e.target.id === "dayNoticeModal") closeDayNotice();
 };
 maybeShowDayNotice();
+
+// ── 모드 전환 (발주 ↔ 재고조사) ─────────────────
+document.querySelectorAll(".mode-btn").forEach(btn => {
+  btn.onclick = () => setMode(btn.dataset.mode);
+});
+
+// ── 미니 계산기 ────────────────────────────────
+const calcState = { expr: "", evaluated: false };
+
+function calcEval(expr) {
+  const s = expr
+    .replace(/×/g, "*")
+    .replace(/÷/g, "/")
+    .replace(/−/g, "-")
+    .replace(/[+\-*/]+$/, "");
+  if (!s) return null;
+  if (!/^[0-9+\-*/.]+$/.test(s)) return null;
+  try {
+    const v = Function(`"use strict";return (${s})`)();
+    if (typeof v !== "number" || !isFinite(v)) return null;
+    return Math.round(v * 1e10) / 1e10;
+  } catch { return null; }
+}
+
+function formatCalc(v) {
+  if (v === null || v === undefined || !isFinite(v)) return "";
+  return String(Number(v.toFixed(10)));
+}
+
+function renderCalc() {
+  const exprEl = document.getElementById("calcExpr");
+  const resEl = document.getElementById("calcResult");
+  exprEl.textContent = calcState.expr || "0";
+  const v = calcEval(calcState.expr);
+  const hasOp = /[+−×÷]/.test(calcState.expr);
+  resEl.textContent = hasOp && v !== null ? `= ${formatCalc(v)}` : "";
+}
+
+function calcKey(k) {
+  if (k === "C") {
+    calcState.expr = "";
+    calcState.evaluated = false;
+  } else if (k === "back") {
+    calcState.expr = calcState.expr.slice(0, -1);
+    calcState.evaluated = false;
+  } else if (k === "=") {
+    const v = calcEval(calcState.expr);
+    if (v === null) { showToast("계산할 수 없는 수식이에요"); return; }
+    calcState.expr = formatCalc(v);
+    calcState.evaluated = true;
+  } else if ("+−×÷".includes(k)) {
+    if (!calcState.expr) {
+      if (k === "−") calcState.expr = "−";
+      else return;
+    } else if (/[+−×÷]$/.test(calcState.expr)) {
+      calcState.expr = calcState.expr.slice(0, -1) + k;
+    } else {
+      calcState.expr += k;
+    }
+    calcState.evaluated = false;
+    if (calcState.expr === "−") { renderCalc(); return; }
+  } else if (k === ".") {
+    if (calcState.evaluated) { calcState.expr = ""; calcState.evaluated = false; }
+    const tail = calcState.expr.split(/[+−×÷]/).pop();
+    if (tail.includes(".")) return;
+    if (!tail) calcState.expr += "0";
+    calcState.expr += ".";
+  } else {
+    if (calcState.evaluated) { calcState.expr = ""; calcState.evaluated = false; }
+    if (calcState.expr.length >= 24) return;
+    if (calcState.expr === "0") calcState.expr = "";
+    calcState.expr += k;
+  }
+  renderCalc();
+}
+
+document.getElementById("btnCalc").onclick = () => {
+  renderCalc();
+  document.getElementById("calcModal").classList.add("open");
+};
+document.getElementById("closeCalc").onclick = () =>
+  document.getElementById("calcModal").classList.remove("open");
+document.getElementById("calcModal").onclick = (e) => {
+  if (e.target && e.target.id === "calcModal") e.currentTarget.classList.remove("open");
+};
+document.getElementById("calcKeys").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-k]");
+  if (btn) calcKey(btn.dataset.k);
+});
 
 // Add item modal
 const newGroupSel = document.getElementById("newGroup");
@@ -993,6 +1301,7 @@ document.getElementById("confirmAdd").onclick = () => {
   showToast(`'${name}' 추가했어요`);
 };
 
+renderModeUi();
 renderHeaderDate();
 renderAll();
 </script>
