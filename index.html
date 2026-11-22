@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="발주 도우미" />
+<title>발주 도우미</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #191f28;
+    --sub: #6b7684;
+    --line: #e5e8eb;
+    --primary: #3182f6;
+    --primary-weak: #e8f3ff;
+    --kakao: #fee500;
+    --kakao-text: #191919;
+    --danger: #f04452;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 100px;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 14px 10px;
+  }
+  .top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .btn-sm {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-sm.primary {
+    background: var(--primary-weak);
+    color: var(--primary);
+    border-color: transparent;
+  }
+  .search-wrap {
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .search-input {
+    width: 100%;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    padding: 0 34px 0 12px;
+    font-size: 15px;
+    outline: none;
+  }
+  .search-input:focus {
+    border-color: var(--primary);
+    background: #fff;
+  }
+  .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: #d1d6db;
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 12px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 0 0 auto;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--sub);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .tab.active {
+    background: var(--text);
+    color: #fff;
+    border-color: var(--text);
+  }
+  .tab .badge {
+    background: var(--primary);
+    color: #fff;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 999px;
+  }
+  .tab.active .badge {
+    background: var(--kakao);
+    color: var(--kakao-text);
+  }
+  main {
+    padding: 12px 14px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .group-card {
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .group-header {
+    padding: 11px 14px;
+    background: #fafbfc;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .group-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .group-copy {
+    border: none;
+    background: var(--kakao);
+    color: var(--kakao-text);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 9px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f2f4f6;
+    gap: 10px;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-row.has-qty {
+    background: #f4f9ff;
+  }
+  .item-info {
+    min-width: 0;
+    flex: 1;
+  }
+  .item-name {
+    font-size: 15px;
+    font-weight: 600;
+    word-break: keep-all;
+  }
+  .item-vendor {
+    font-size: 12px;
+    color: var(--sub);
+    margin-top: 2px;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .qty-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .qty-btn:active { background: #eef1f4; }
+  .qty-input {
+    width: 46px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    background: #fff;
+    outline: none;
+  }
+  .qty-input:focus { border-color: var(--primary); }
+  .unit-select {
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    font-size: 12px;
+    color: var(--sub);
+    padding: 0 4px;
+    outline: none;
+  }
+  .del-btn {
+    width: 26px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: #b0b8c1;
+    font-size: 15px;
+    cursor: pointer;
+    display: none;
+  }
+  body.edit-mode .del-btn { display: inline-flex; align-items: center; justify-content: center; }
+
+  .bottom-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 30;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line);
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .btn-reset {
+    height: 46px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--danger);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-preview {
+    flex: 1;
+    height: 46px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-copy-all {
+    flex: 1.5;
+    height: 46px;
+    border-radius: 12px;
+    border: none;
+    background: var(--kakao);
+    color: var(--kakao-text);
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 50;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: 100%;
+    max-width: 680px;
+    background: #fff;
+    border-radius: 18px 18px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .preview-box {
+    width: 100%;
+    min-height: 200px;
+    max-height: 45vh;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+    font-family: inherit;
+    resize: none;
+    background: #f9fafb;
+  }
+  .field-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field-row label { font-size: 13px; font-weight: 600; color: var(--sub); }
+  .field-row input, .field-row select {
+    height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0 12px;
+    font-size: 15px;
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 78px;
+    transform: translateX(-50%);
+    background: rgba(25, 31, 40, 0.92);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .toast.show { opacity: 1; }
+  .empty {
+    text-align: center;
+    color: var(--sub);
+    padding: 40px 16px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top-row">
+    <div class="title">📦 발주 도우미</div>
+    <div class="header-actions">
+      <button class="btn-sm" id="btnOnlySelected">담은 것만</button>
+      <button class="btn-sm" id="btnEditMode">편집</button>
+      <button class="btn-sm primary" id="btnOpenAdd">+ 품목</button>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="searchInput" placeholder="품목 또는 거래처 검색..." />
+    <button class="search-clear" id="searchClear">✕</button>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<main id="listContainer"></main>
+
+<div class="bottom-bar">
+  <button class="btn-reset" id="btnReset">초기화</button>
+  <button class="btn-preview" id="btnPreview">미리보기</button>
+  <button class="btn-copy-all" id="btnCopyAll">카톡 복사 (0)</button>
+</div>
+
+<!-- 미리보기 모달 -->
+<div class="modal-backdrop" id="previewModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>카톡 발주 문구</span>
+      <button class="btn-sm" id="closePreview">닫기</button>
+    </div>
+    <textarea class="preview-box" id="previewText" readonly></textarea>
+    <button class="btn-copy-all" id="modalCopyBtn" style="width:100%">전체 복사하기</button>
+  </div>
+</div>
+
+<!-- 품목 추가 모달 -->
+<div class="modal-backdrop" id="addModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>새 품목 추가</span>
+      <button class="btn-sm" id="closeAdd">닫기</button>
+    </div>
+    <div class="field-row">
+      <label>거래처 (분류)</label>
+      <select id="newGroup"></select>
+    </div>
+    <div class="field-row">
+      <label>품목명</label>
+      <input type="text" id="newName" placeholder="예: 양배추" />
+    </div>
+    <div class="field-row">
+      <label>세부 거래처 (선택)</label>
+      <input type="text" id="newVendor" placeholder="예: 여주농산" />
+    </div>
+    <button class="btn-copy-all" id="confirmAdd" style="width:100%">추가하기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_ITEMS = [
+  // 청량 (중복 8개 제거)
+  ...["냉동키위","디벨라파스타면","소고기다시다","참기름","베트남고추","쿠킹크림","올리브오일","파마산치즈","통깨","굵은후추","생와사비","돈부리노타래","시치미","초밥소스","백설탕","고춧가루","우동다시","치킨부용","조미유부","초생강","이온물엿","갈아만든배","기꼬만간장","김밥용우엉","꽃소금","빵가루","두반장","미림","케찹","빙초산","생기리다이꽁","신화당","돈까스소스","메기치킨스탁","캐슈넛","파인애플캔","환만식초","굴소스파우치","슬라이스치즈","우스타","밧타믹스","a1스테이크소스","식빵","가라아게밧타","치킨튀김가루","홀피클","푸로찜","순후추","맛소금","마늘종","참깨드레싱","마요네즈스타우트팩","3배사과식초","디종머스타드","토마토홀","데미그라스","앵커버터","유자청","홀그레인머스타드","미원","미소된장"]
+    .map(name => ({ group: "청량", vendor: "청량", name })),
+
+  // 여주농산
+  ...["레몬","알밥용김치","마늘","양파","쪽파","대파","숙주","오크리프","청양고추","청오이","특란","쌀","무","양배추","방울토마토","깻잎"]
+    .map(name => ({ group: "여주농산", vendor: "여주농산", name })),
+
+  // 수산 (osk수산 / 제이유수산)
+  ...["노바시새우","김밥용김","눈다랑어참블럭","빵가루새우"]
+    .map(name => ({ group: "수산", vendor: "osk수산", name })),
+  { group: "수산", vendor: "제이유수산", name: "붕장어" },
+
+  // 소스류
+  ...["초양파","대창소스","지소스","다시마끼","밥소스","코울슬로","카츠소스","크림","장어소스","마제소스","마제고명","김치찌개","피클","쯔유","장국","스탁","유자드레싱","마구로소스","가라아게물"]
+    .map(name => ({ group: "소스류", vendor: "소스", name })),
+
+  // 인터넷발주
+  ...["후리가케","감뽀","우스구찌","가쓰오부시"]
+    .map(name => ({ group: "인터넷발주", vendor: "인터넷발주", name })),
+
+  // 대진주류 / 코카콜라
+  ...["제로스프라이트","콜라","제로콜라","스프라이트"]
+    .map(name => ({ group: "주류/음료", vendor: "코카콜라", name })),
+  ...["백화수복","오키나와생맥주","테라"]
+    .map(name => ({ group: "주류/음료", vendor: "대진주류", name })),
+
+  // 식용유 / 만전김
+  { group: "식용유/김", vendor: "식용유", name: "식용유" },
+  { group: "식용유/김", vendor: "만전김", name: "생김실채" },
+
+  // 태운미트 / 금옥축산
+  ...["항정살","돈민찌","닭정육","등심","안심","삼겹살"]
+    .map(name => ({ group: "육류", vendor: "태운미트", name })),
+  { group: "육류", vendor: "금옥축산", name: "한우대창" }
+];
+
+const STORAGE_ITEMS_KEY = "daru_order_items_v1";
+const STORAGE_QTYS_KEY = "daru_order_qtys_v1";
+const GROUPS = ["전체", "여주농산", "청량", "소스류", "수산", "인터넷발주", "주류/음료", "식용유/김", "육류"];
+const UNITS = ["", "개", "박스", "팩", "봉", "병", "캔", "kg"];
+
+let items = loadJSON(STORAGE_ITEMS_KEY, DEFAULT_ITEMS).map((it, idx) => ({
+  id: it.id || `${it.group}_${it.name}_${idx}`,
+  ...it
+}));
+let qtys = loadJSON(STORAGE_QTYS_KEY, {});
+let activeGroup = "전체";
+let onlySelected = false;
+let searchText = "";
+
+function loadJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(fallback));
+  } catch { return JSON.parse(JSON.stringify(fallback)); }
+}
+function saveState() {
+  localStorage.setItem(STORAGE_ITEMS_KEY, JSON.stringify(items));
+  localStorage.setItem(STORAGE_QTYS_KEY, JSON.stringify(qtys));
+}
+
+function getEntry(id) {
+  return qtys[id] || { qty: 0, unit: "" };
+}
+function setQty(id, qty, unit) {
+  const cleanQty = Math.max(0, Number(qty) || 0);
+  const prev = getEntry(id);
+  const nextUnit = unit !== undefined ? unit : prev.unit;
+  if (cleanQty === 0 && !nextUnit) {
+    delete qtys[id];
+  } else {
+    qtys[id] = { qty: cleanQty, unit: nextUnit };
+  }
+  saveState();
+  renderAll();
+}
+
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => el.classList.remove("show"), 1800);
+}
+
+async function copyText(text) {
+  if (!text) { showToast("선택된 품목이 없어요"); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("카톡에 붙여넣기 좋게 복사했어요!");
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    showToast("복사 완료!");
+  }
+}
+
+function buildOrderText(filterGroup = null) {
+  const selected = items.filter(it => {
+    const q = getEntry(it.id).qty;
+    if (q <= 0) return false;
+    if (filterGroup && it.group !== filterGroup) return false;
+    return true;
+  });
+  if (selected.length === 0) return "";
+
+  const now = new Date();
+  const dateStr = `${now.getMonth() + 1}/${now.getDate()}`;
+  const byVendor = {};
+  selected.forEach(it => {
+    const key = it.vendor || it.group;
+    if (!byVendor[key]) byVendor[key] = [];
+    const { qty, unit } = getEntry(it.id);
+    byVendor[key].push(`- ${it.name} ${qty}${unit}`);
+  });
+
+  const sections = Object.entries(byVendor).map(([vendor, lines]) =>
+    `[${vendor}]\n${lines.join("\n")}`
+  );
+  return `${dateStr} 발주\n\n` + sections.join("\n\n");
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById("tabs");
+  tabsEl.innerHTML = "";
+  GROUPS.forEach(g => {
+    const count = items.filter(it => (g === "전체" || it.group === g) && getEntry(it.id).qty > 0).length;
+    const btn = document.createElement("button");
+    btn.className = "tab" + (activeGroup === g ? " active" : "");
+    btn.innerHTML = `<span>${g}</span>` + (count > 0 ? `<span class="badge">${count}</span>` : "");
+    btn.onclick = () => { activeGroup = g; renderAll(); };
+    tabsEl.appendChild(btn);
+  });
+}
+
+function renderList() {
+  const container = document.getElementById("listContainer");
+  container.innerHTML = "";
+
+  const q = searchText.trim().toLowerCase();
+  const filtered = items.filter(it => {
+    if (activeGroup !== "전체" && it.group !== activeGroup) return false;
+    if (onlySelected && getEntry(it.id).qty <= 0) return false;
+    if (q && !it.name.toLowerCase().includes(q) && !(it.vendor || "").toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty">${onlySelected ? "담긴 품목이 없어요." : "검색 결과가 없어요."}</div>`;
+    return;
+  }
+
+  const groupsOrder = activeGroup === "전체" ? GROUPS.slice(1) : [activeGroup];
+  groupsOrder.forEach(g => {
+    const groupItems = filtered.filter(it => it.group === g);
+    if (groupItems.length === 0) return;
+
+    const card = document.createElement("section");
+    card.className = "group-card";
+
+    const header = document.createElement("div");
+    header.className = "group-header";
+    const selectedInGroup = groupItems.filter(it => getEntry(it.id).qty > 0).length;
+    header.innerHTML = `
+      <span class="group-name">${g} (${groupItems.length})</span>
+      ${selectedInGroup > 0 ? `<button class="group-copy">이 거래처만 복사 (${selectedInGroup})</button>` : ""}
+    `;
+    const copyBtn = header.querySelector(".group-copy");
+    if (copyBtn) {
+      copyBtn.onclick = () => copyText(buildOrderText(g));
+    }
+    card.appendChild(header);
+
+    groupItems.forEach(it => {
+      const entry = getEntry(it.id);
+      const row = document.createElement("div");
+      row.className = "item-row" + (entry.qty > 0 ? " has-qty" : "");
+
+      const info = document.createElement("div");
+      info.className = "item-info";
+      info.innerHTML = `<div class="item-name">${it.name}</div>` +
+        (it.vendor && it.vendor !== it.group ? `<div class="item-vendor">${it.vendor}</div>` : "");
+
+      const controls = document.createElement("div");
+      controls.className = "controls";
+
+      const minus = document.createElement("button");
+      minus.className = "qty-btn";
+      minus.textContent = "−";
+      minus.onclick = () => setQty(it.id, entry.qty - 1);
+
+      const input = document.createElement("input");
+      input.className = "qty-input";
+      input.type = "number";
+      input.inputMode = "decimal";
+      input.min = "0";
+      input.step = "any";
+      input.value = entry.qty || "";
+      input.placeholder = "0";
+      input.onchange = (e) => setQty(it.id, e.target.value);
+
+      const plus = document.createElement("button");
+      plus.className = "qty-btn";
+      plus.textContent = "+";
+      plus.onclick = () => setQty(it.id, entry.qty + 1);
+
+      const unitSel = document.createElement("select");
+      unitSel.className = "unit-select";
+      UNITS.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u;
+        opt.textContent = u || "단위";
+        if (entry.unit === u) opt.selected = true;
+        unitSel.appendChild(opt);
+      });
+      unitSel.onchange = (e) => setQty(it.id, entry.qty, e.target.value);
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "del-btn";
+      delBtn.textContent = "✕";
+      delBtn.onclick = () => {
+        if (confirm(`'${it.name}' 품목을 목록에서 삭제할까요?`)) {
+          items = items.filter(x => x.id !== it.id);
+          delete qtys[it.id];
+          saveState();
+          renderAll();
+        }
+      };
+
+      controls.append(minus, input, plus, unitSel, delBtn);
+      row.append(info, controls);
+      card.appendChild(row);
+    });
+
+    container.appendChild(card);
+  });
+}
+
+function renderBottom() {
+  const count = items.filter(it => getEntry(it.id).qty > 0).length;
+  document.getElementById("btnCopyAll").textContent = `카톡 복사 (${count})`;
+}
+
+function renderAll() {
+  renderTabs();
+  renderList();
+  renderBottom();
+}
+
+// Events
+const searchInput = document.getElementById("searchInput");
+const searchClear = document.getElementById("searchClear");
+searchInput.addEventListener("input", (e) => {
+  searchText = e.target.value;
+  searchClear.style.display = searchText ? "flex" : "none";
+  renderList();
+});
+searchClear.onclick = () => {
+  searchText = "";
+  searchInput.value = "";
+  searchClear.style.display = "none";
+  renderList();
+};
+
+document.getElementById("btnOnlySelected").onclick = (e) => {
+  onlySelected = !onlySelected;
+  e.target.classList.toggle("primary", onlySelected);
+  renderList();
+};
+
+document.getElementById("btnEditMode").onclick = (e) => {
+  const on = document.body.classList.toggle("edit-mode");
+  e.target.classList.toggle("primary", on);
+  e.target.textContent = on ? "완료" : "편집";
+};
+
+document.getElementById("btnReset").onclick = () => {
+  const count = items.filter(it => getEntry(it.id).qty > 0).length;
+  if (count === 0) { showToast("초기화할 수량이 없어요"); return; }
+  if (confirm(`입력된 ${count}개 품목 수량을 모두 0으로 초기화할까요?`)) {
+    qtys = {};
+    saveState();
+    renderAll();
+    showToast("수량을 초기화했어요");
+  }
+};
+
+document.getElementById("btnCopyAll").onclick = () => copyText(buildOrderText());
+
+document.getElementById("btnPreview").onclick = () => {
+  const txt = buildOrderText();
+  if (!txt) { showToast("먼저 수량을 1개 이상 입력해 주세요"); return; }
+  document.getElementById("previewText").value = txt;
+  document.getElementById("previewModal").classList.add("open");
+};
+document.getElementById("closePreview").onclick = () =>
+  document.getElementById("previewModal").classList.remove("open");
+document.getElementById("modalCopyBtn").onclick = () =>
+  copyText(document.getElementById("previewText").value);
+
+// Add item modal
+const newGroupSel = document.getElementById("newGroup");
+GROUPS.slice(1).forEach(g => {
+  const opt = document.createElement("option");
+  opt.value = g;
+  opt.textContent = g;
+  newGroupSel.appendChild(opt);
+});
+document.getElementById("btnOpenAdd").onclick = () => {
+  if (activeGroup !== "전체") newGroupSel.value = activeGroup;
+  document.getElementById("newName").value = "";
+  document.getElementById("newVendor").value = "";
+  document.getElementById("addModal").classList.add("open");
+};
+document.getElementById("closeAdd").onclick = () =>
+  document.getElementById("addModal").classList.remove("open");
+document.getElementById("confirmAdd").onclick = () => {
+  const group = newGroupSel.value;
+  const name = document.getElementById("newName").value.trim();
+  const vendor = document.getElementById("newVendor").value.trim() || group;
+  if (!name) { showToast("품목명을 입력해 주세요"); return; }
+  if (items.some(it => it.group === group && it.name === name)) {
+    showToast("이미 같은 거래처에 있는 품목이에요");
+    return;
+  }
+  items.unshift({ id: `${group}_${name}_${Date.now()}`, group, vendor, name });
+  saveState();
+  document.getElementById("addModal").classList.remove("open");
+  renderAll();
+  showToast(`'${name}' 추가했어요`);
+};
+
+renderAll();
+</script>
+</body>
+</html>
