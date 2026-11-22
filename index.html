@@ -557,20 +557,15 @@ function buildOrderText(filterGroup = null) {
   });
   if (selected.length === 0) return "";
 
-  const now = new Date();
-  const dateStr = `${now.getMonth() + 1}/${now.getDate()}`;
   const byVendor = {};
   selected.forEach(it => {
     const key = it.vendor || it.group;
     if (!byVendor[key]) byVendor[key] = [];
     const { qty, unit } = getEntry(it.id);
-    byVendor[key].push(`- ${it.name} ${qty}${unit}`);
+    byVendor[key].push(`${it.name} ${qty}${unit}`);
   });
 
-  const sections = Object.entries(byVendor).map(([vendor, lines]) =>
-    `[${vendor}]\n${lines.join("\n")}`
-  );
-  return `${dateStr} 발주\n\n` + sections.join("\n\n");
+  return Object.values(byVendor).flat().join("\n");
 }
 
 function renderTabs() {
