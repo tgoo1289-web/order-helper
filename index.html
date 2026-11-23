@@ -699,6 +699,143 @@
     border: none;
   }
   .calc-key.zero { grid-column: span 2; }
+
+  /* ── 작업 모드 ── */
+  body.mode-task .tabs { display: none; }
+  body.mode-task .btn-copy-all,
+  body.mode-task .btn-group-copy,
+  body.mode-task .btn-sheet-main,
+  body.mode-task .btn-preview { display: none !important; }
+  body.mode-task .btn-reset { padding: 0 12px; font-size: 13px; }
+  .task-summary {
+    display: none;
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--sub);
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+  }
+  .task-summary b { color: var(--primary); font-weight: 800; }
+  body.mode-task .task-summary { display: block; }
+  .task-add-row {
+    display: flex;
+    gap: 6px;
+    padding: 10px 12px;
+    background: #fafbfc;
+    border-bottom: 1px solid var(--line);
+  }
+  .task-name-input {
+    flex: 1;
+    min-width: 0;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    padding: 0 11px;
+    font-size: 14.5px;
+    font-family: inherit;
+    outline: none;
+  }
+  .task-name-input:focus { border-color: var(--primary); }
+  .btn-task-add {
+    flex: 0 0 auto;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .task-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f2f4f6;
+  }
+  .task-row:last-child { border-bottom: none; }
+  .task-row.has-qty { background: #f4f9ff; }
+  .task-row.done { background: #f2f6fb; }
+  .task-main {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 1 1 108px;
+    min-width: 0;
+    padding: 2px 0;
+    cursor: pointer;
+  }
+  .task-check {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid #cfd6dd;
+    background: #fff;
+    color: transparent;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+  }
+  .task-check.on {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+  .task-name {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+    word-break: keep-all;
+  }
+  .task-row.done .task-name {
+    color: var(--sub);
+    text-decoration: line-through;
+  }
+  .task-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+  .task-controls .qty-btn { width: 31px; height: 31px; font-size: 16px; border-radius: 8px; }
+  .task-controls .qty-input { width: 42px; height: 31px; font-size: 14px; border-radius: 8px; }
+  .task-controls .unit-select { height: 31px; max-width: 62px; font-size: 11.5px; padding: 0 1px; border-radius: 8px; }
+  .task-controls .del-btn { height: 31px; font-size: 14px; }
+  .task-rename {
+    flex: 1;
+    min-width: 0;
+    height: 30px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0 8px;
+    font-size: 14.5px;
+    font-weight: 600;
+    font-family: inherit;
+    background: #fff;
+    outline: none;
+  }
+  .task-rename:focus { border-color: var(--primary); }
+  .task-empty {
+    text-align: center;
+    color: var(--sub);
+    font-size: 13.5px;
+    line-height: 1.65;
+    white-space: pre-line;
+    padding: 32px 16px 34px;
+  }
 </style>
 </head>
 <body>
@@ -706,6 +843,7 @@
 <header>
   <div class="mode-switch" id="modeSwitch">
     <button class="mode-btn active" data-mode="order">발주</button>
+    <button class="mode-btn" data-mode="task">작업</button>
     <button class="mode-btn" data-mode="stock">재고조사</button>
   </div>
   <div class="top-row">
@@ -728,6 +866,7 @@
 <main id="listContainer"></main>
 
 <div class="bottom-bar">
+  <div class="task-summary" id="taskSummary"></div>
   <button class="btn-reset" id="btnReset">초기화</button>
   <button class="btn-group-copy" id="btnCopyGroup">이 거래처만 복사 (0)</button>
   <button class="btn-copy-all" id="btnCopyAll">카톡 복사 (0)</button>
@@ -881,8 +1020,11 @@ const STORAGE_ITEMS_KEY = "daru_order_items_v1";
 const STORAGE_QTYS_KEY = "daru_order_qtys_v1";            // 발주 모드 수량
 const STORAGE_STOCK_KEY = "daru_inventory_state_v1";       // 재고조사 모드 수량
 const STORAGE_MODE_KEY = "daru_app_mode_v1";               // 마지막으로 쓰던 모드
+const STORAGE_TASK_LIST_KEY = "daru_task_list_v1";         // 작업 목록 (등록한 작업 자체 — 초기화해도 유지)
+const STORAGE_TASK_STATE_KEY = "daru_task_state_v1";       // 작업 체크·작업량·단위 (날마다 초기화되는 부분)
 const GROUPS = ["전체", "여주농산", "청량", "소스류", "수산", "인터넷발주", "주류/음료", "식용유/김", "육류"];
 const UNITS = ["", "개", "박스", "팩", "봉", "병", "캔", "kg"];
+const TASK_UNITS = ["", "개", "kg", "g", "팩", "통", "봉", "박스", "병", "캔"];
 
 // 상단 날짜 색: 토요일 파랑 / 일요일·공휴일 빨강
 const COLOR_SAT = "#2563eb";
@@ -932,9 +1074,20 @@ let items = loadJSON(STORAGE_ITEMS_KEY, DEFAULT_ITEMS).map((it, idx) => ({
 }));
 const orderQtys = loadJSON(STORAGE_QTYS_KEY, {});   // 발주 수량 (기존 키 그대로)
 const stockQtys = loadJSON(STORAGE_STOCK_KEY, {});   // 재고조사 수량 (별도 키)
-let mode = localStorage.getItem(STORAGE_MODE_KEY) === "stock" ? "stock" : "order";
+
+// 작업 모드: 목록(등록한 작업)과 오늘치 상태(체크·작업량·단위)를 별도 키로 보관
+const savedTaskList = loadJSON(STORAGE_TASK_LIST_KEY, []);
+let taskList = (Array.isArray(savedTaskList) ? savedTaskList : [])
+  .filter(t => t && t.name)
+  .map((t, idx) => ({ id: t.id || `task_${idx}_${Date.now()}`, name: String(t.name).trim() }));
+const taskState = loadJSON(STORAGE_TASK_STATE_KEY, {});
+let taskAddDraft = "";
+
+const savedMode = localStorage.getItem(STORAGE_MODE_KEY);
+let mode = savedMode === "stock" ? "stock" : savedMode === "task" ? "task" : "order";
 let activeGroup = "전체";
 let onlySelected = false;
+let onlyChecked = false;
 let searchText = "";
 
 function loadJSON(key, fallback) {
@@ -947,11 +1100,88 @@ function saveState() {
   localStorage.setItem(STORAGE_ITEMS_KEY, JSON.stringify(items));
   localStorage.setItem(STORAGE_QTYS_KEY, JSON.stringify(orderQtys));
   localStorage.setItem(STORAGE_STOCK_KEY, JSON.stringify(stockQtys));
+  localStorage.setItem(STORAGE_TASK_LIST_KEY, JSON.stringify(taskList));
+  localStorage.setItem(STORAGE_TASK_STATE_KEY, JSON.stringify(taskState));
 }
+function saveTaskList() { localStorage.setItem(STORAGE_TASK_LIST_KEY, JSON.stringify(taskList)); }
+function saveTaskState() { localStorage.setItem(STORAGE_TASK_STATE_KEY, JSON.stringify(taskState)); }
 
 // 모드별 수량 저장소 — 발주/재고조사 수량이 섞이지 않도록 완전히 분리
 function qtysRef() { return mode === "stock" ? stockQtys : orderQtys; }
 function isStock() { return mode === "stock"; }
+function isTask() { return mode === "task"; }
+
+// ── 작업 모드 상태 ────────────────────────────────
+function getTaskEntry(id) {
+  const e = taskState[id];
+  if (!e) return { qty: 0, unit: "", checked: false };
+  return { qty: Number(e.qty) || 0, unit: e.unit || "", checked: !!e.checked };
+}
+
+function setTaskEntry(id, patch) {
+  const prev = getTaskEntry(id);
+  const next = {
+    qty: patch.qty !== undefined ? Math.max(0, Number(patch.qty) || 0) : prev.qty,
+    unit: patch.unit !== undefined ? patch.unit : prev.unit,
+    checked: patch.checked !== undefined ? !!patch.checked : prev.checked
+  };
+  if (!next.qty && !next.unit && !next.checked) delete taskState[id];
+  else taskState[id] = next;
+  saveTaskState();
+  renderAll();
+}
+
+function addTask(rawName) {
+  const name = String(rawName || "").trim();
+  if (!name) { showToast("작업 이름을 입력해 주세요"); return; }
+  if (taskList.some(t => t.name === name)) { showToast("이미 있는 작업이에요"); return; }
+  taskList.push({ id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, name });
+  taskAddDraft = "";
+  saveTaskList();
+  renderAll();
+  showToast(`'${name}' 추가했어요`);
+}
+
+function removeTask(id, name) {
+  if (!confirm(`'${name}' 작업을 목록에서 삭제할까요?`)) return;
+  taskList = taskList.filter(t => t.id !== id);
+  delete taskState[id];
+  saveTaskList();
+  saveTaskState();
+  renderAll();
+}
+
+function renameTask(id, rawName) {
+  const name = String(rawName || "").trim();
+  const target = taskList.find(t => t.id === id);
+  if (!target) return;
+  if (!name) { renderAll(); return; }
+  if (name === target.name) { renderAll(); return; }
+  if (taskList.some(t => t.id !== id && t.name === name)) {
+    showToast("이미 있는 작업이에요");
+    renderAll();
+    return;
+  }
+  target.name = name;
+  saveTaskList();
+  renderAll();
+  showToast("작업 이름을 바꿨아요");
+}
+
+function resetTaskDay() {
+  const doneCount = taskList.filter(t => getTaskEntry(t.id).checked).length;
+  const qtyCount = taskList.filter(t => getTaskEntry(t.id).qty > 0).length;
+  if (!doneCount && !qtyCount) { showToast("초기화할 체크나 작업량이 없어요"); return; }
+  if (!confirm(`오늘 체크 ${doneCount}개·작업량 ${qtyCount}개의 입력을 비울까요?\n등록한 작업 목록은 그대로 남아요.`)) return;
+  taskList.forEach(t => {
+    const prev = getTaskEntry(t.id);
+    if (prev.unit) taskState[t.id] = { qty: 0, unit: prev.unit, checked: false };
+    else delete taskState[t.id];
+  });
+  saveTaskState();
+  renderAll();
+  showToast("체크와 작업량을 비웠어요");
+}
 
 function getEntry(id) {
   return qtysRef()[id] || { qty: 0, unit: "" };
@@ -1157,6 +1387,152 @@ function renderList() {
   });
 }
 
+function renderTaskList() {
+  const container = document.getElementById("listContainer");
+  container.innerHTML = "";
+
+  const card = document.createElement("section");
+  card.className = "group-card";
+
+  // 작업 추가 줄 (항상 맨 위에 고정)
+  const addRow = document.createElement("div");
+  addRow.className = "task-add-row";
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.className = "task-name-input";
+  nameInput.id = "taskNameInput";
+  nameInput.placeholder = "새 작업 이름 (예: 돼지고기 손질)";
+  nameInput.maxLength = 30;
+  nameInput.autocomplete = "off";
+  nameInput.value = taskAddDraft;
+  nameInput.oninput = (e) => { taskAddDraft = e.target.value; };
+  nameInput.onkeydown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addTask(nameInput.value); }
+  };
+  const addBtn = document.createElement("button");
+  addBtn.className = "btn-task-add";
+  addBtn.textContent = "+ 추가";
+  addBtn.onclick = () => addTask(nameInput.value);
+  addRow.append(nameInput, addBtn);
+  card.appendChild(addRow);
+
+  if (taskList.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "task-empty";
+    empty.textContent = "아직 등록된 작업이 없어요.\n위 칸이나 상단 '+ 작업' 버튼으로 추가해 보세요.";
+    card.appendChild(empty);
+    container.appendChild(card);
+    return;
+  }
+
+  const q = searchText.trim().toLowerCase();
+  const shown = taskList.filter(t => {
+    if (onlyChecked && !getTaskEntry(t.id).checked) return false;
+    if (q && !t.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (shown.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "task-empty";
+    empty.textContent = onlyChecked ? "체크한 작업이 없어요." : "검색 결과가 없어요.";
+    card.appendChild(empty);
+    container.appendChild(card);
+    return;
+  }
+
+  const editing = document.body.classList.contains("edit-mode");
+  shown.forEach(t => {
+    const entry = getTaskEntry(t.id);
+    const row = document.createElement("div");
+    row.className = "task-row" + (entry.checked ? " done" : "") + (entry.qty > 0 ? " has-qty" : "");
+
+    const main = document.createElement("div");
+    main.className = "task-main";
+    if (!editing) main.onclick = () => setTaskEntry(t.id, { checked: !entry.checked });
+
+    const check = document.createElement("button");
+    check.type = "button";
+    check.className = "task-check" + (entry.checked ? " on" : "");
+    check.textContent = "✓";
+    check.setAttribute("aria-pressed", entry.checked ? "true" : "false");
+    check.setAttribute("aria-label", entry.checked ? `${t.name} 체크 해제` : `${t.name} 체크`);
+
+    main.append(check);
+    if (editing) {
+      const rename = document.createElement("input");
+      rename.type = "text";
+      rename.className = "task-rename";
+      rename.value = t.name;
+      rename.maxLength = 30;
+      rename.autocomplete = "off";
+      rename.setAttribute("aria-label", "작업 이름 수정");
+      rename.onchange = (e) => renameTask(t.id, e.target.value);
+      main.appendChild(rename);
+    } else {
+      const nm = document.createElement("div");
+      nm.className = "task-name";
+      nm.textContent = t.name;
+      main.appendChild(nm);
+    }
+
+    const controls = document.createElement("div");
+    controls.className = "task-controls";
+
+    const minus = document.createElement("button");
+    minus.type = "button";
+    minus.className = "qty-btn";
+    minus.textContent = "−";
+    minus.onclick = () => setTaskEntry(t.id, { qty: entry.qty - 1 });
+
+    const input = document.createElement("input");
+    input.className = "qty-input";
+    input.type = "number";
+    input.inputMode = "decimal";
+    input.min = "0";
+    input.step = "any";
+    input.value = entry.qty || "";
+    input.placeholder = "0";
+    input.onchange = (e) => setTaskEntry(t.id, { qty: e.target.value });
+
+    const plus = document.createElement("button");
+    plus.type = "button";
+    plus.className = "qty-btn";
+    plus.textContent = "+";
+    plus.onclick = () => setTaskEntry(t.id, { qty: entry.qty + 1 });
+
+    const unitSel = document.createElement("select");
+    unitSel.className = "unit-select";
+    TASK_UNITS.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u;
+      opt.textContent = u || "단위";
+      if (entry.unit === u) opt.selected = true;
+      unitSel.appendChild(opt);
+    });
+    unitSel.onchange = (e) => setTaskEntry(t.id, { unit: e.target.value });
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "del-btn";
+    delBtn.textContent = "✕";
+    delBtn.onclick = () => removeTask(t.id, t.name);
+
+    controls.append(minus, input, plus, unitSel, delBtn);
+    row.append(main, controls);
+    card.appendChild(row);
+  });
+
+  container.appendChild(card);
+}
+
+function renderTaskBottom() {
+  const total = taskList.length;
+  const done = taskList.filter(t => getTaskEntry(t.id).checked).length;
+  document.getElementById("taskSummary").innerHTML =
+    `전체 <b>${total}</b>개 · 체크 <b>${done}</b>개`;
+}
+
 function renderBottom() {
   const count = items.filter(it => getEntry(it.id).qty > 0).length;
   document.getElementById("btnCopyAll").textContent = `카톡 복사 (${count})`;
@@ -1175,24 +1551,41 @@ function renderBottom() {
 
 function renderModeUi() {
   document.body.classList.toggle("mode-stock", isStock());
+  document.body.classList.toggle("mode-task", isTask());
   document.querySelectorAll(".mode-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.mode === mode);
   });
+  const onlyBtn = document.getElementById("btnOnlySelected");
+  onlyBtn.textContent = isTask() ? "체크한 것만" : "담은 것만";
+  onlyBtn.classList.toggle("primary", isTask() ? onlyChecked : onlySelected);
+  document.getElementById("btnOpenAdd").textContent = isTask() ? "+ 작업" : "+ 품목";
+  const editBtn = document.getElementById("btnEditMode");
+  const editing = document.body.classList.contains("edit-mode");
+  editBtn.textContent = editing ? "완료" : "편집";
+  editBtn.classList.toggle("primary", editing);
+  const searchEl = document.getElementById("searchInput");
+  searchEl.placeholder = isTask() ? "작업 검색..." : "품목 또는 거래처 검색...";
 }
 
 function setMode(next) {
-  const target = next === "stock" ? "stock" : "order";
+  const target = next === "stock" ? "stock" : next === "task" ? "task" : "order";
   if (target === mode) return;
   mode = target;
   localStorage.setItem(STORAGE_MODE_KEY, mode);
-  renderModeUi();
-  renderAll();
   searchInput.value = "";
   searchText = "";
+  taskAddDraft = "";
   searchClear.style.display = "none";
+  renderModeUi();
+  renderAll();
 }
 
 function renderAll() {
+  if (isTask()) {
+    renderTaskList();
+    renderTaskBottom();
+    return;
+  }
   renderTabs();
   renderList();
   renderBottom();
@@ -1204,16 +1597,24 @@ const searchClear = document.getElementById("searchClear");
 searchInput.addEventListener("input", (e) => {
   searchText = e.target.value;
   searchClear.style.display = searchText ? "flex" : "none";
-  renderList();
+  if (isTask()) renderTaskList();
+  else renderList();
 });
 searchClear.onclick = () => {
   searchText = "";
   searchInput.value = "";
   searchClear.style.display = "none";
-  renderList();
+  if (isTask()) renderTaskList();
+  else renderList();
 };
 
 document.getElementById("btnOnlySelected").onclick = (e) => {
+  if (isTask()) {
+    onlyChecked = !onlyChecked;
+    e.target.classList.toggle("primary", onlyChecked);
+    renderTaskList();
+    return;
+  }
   onlySelected = !onlySelected;
   e.target.classList.toggle("primary", onlySelected);
   renderList();
@@ -1223,9 +1624,11 @@ document.getElementById("btnEditMode").onclick = (e) => {
   const on = document.body.classList.toggle("edit-mode");
   e.target.classList.toggle("primary", on);
   e.target.textContent = on ? "완료" : "편집";
+  if (isTask()) renderTaskList();
 };
 
 document.getElementById("btnReset").onclick = () => {
+  if (isTask()) { resetTaskDay(); return; }
   const count = items.filter(it => getEntry(it.id).qty > 0).length;
   if (count === 0) { showToast("초기화할 수량이 없어요"); return; }
   const label = isStock() ? "재고조사 수량" : "입력된 발주 수량";
@@ -1624,6 +2027,12 @@ GROUPS.slice(1).forEach(g => {
   newGroupSel.appendChild(opt);
 });
 document.getElementById("btnOpenAdd").onclick = () => {
+  if (isTask()) {
+    const el = document.getElementById("taskNameInput");
+    if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.focus(); }
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
   if (activeGroup !== "전체") newGroupSel.value = activeGroup;
   document.getElementById("newName").value = "";
   document.getElementById("newVendor").value = "";
