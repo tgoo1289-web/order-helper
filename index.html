@@ -718,6 +718,8 @@
     line-height: 1.3;
   }
   .task-summary b { color: var(--primary); font-weight: 800; }
+  .task-summary .task-sync { font-size: 11.5px; font-weight: 600; color: var(--sub); }
+  .task-summary .task-sync.err { color: #b45309; }
   body.mode-task .task-summary { display: block; }
   .task-add-row {
     display: flex;
@@ -1127,17 +1129,24 @@ function setTaskEntry(id, patch) {
   else taskState[id] = next;
   saveTaskState();
   renderAll();
+  const saved = getTaskEntry(id);
+  noteTaskChange({
+    action: "update_task", id,
+    qty: saved.qty, unit: saved.unit, checked: saved.checked
+  });
 }
 
 function addTask(rawName) {
   const name = String(rawName || "").trim();
   if (!name) { showToast("작업 이름을 입력해 주세요"); return; }
   if (taskList.some(t => t.name === name)) { showToast("이미 있는 작업이에요"); return; }
-  taskList.push({ id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, name });
+  const id = `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  taskList.push({ id, name });
   taskAddDraft = "";
   saveTaskList();
   renderAll();
   showToast(`'${name}' 추가했어요`);
+  noteTaskChange({ action: "add_task", task: { id, name, qty: 0, unit: "", checked: false } });
 }
 
 function removeTask(id, name) {
@@ -1147,6 +1156,7 @@ function removeTask(id, name) {
   saveTaskList();
   saveTaskState();
   renderAll();
+  noteTaskChange({ action: "delete_task", id });
 }
 
 function renameTask(id, rawName) {
@@ -1164,6 +1174,7 @@ function renameTask(id, rawName) {
   saveTaskList();
   renderAll();
   showToast("작업 이름을 바꿨아요");
+  noteTaskChange({ action: "update_task", id, name });
 }
 
 function resetTaskDay() {
@@ -1179,6 +1190,164 @@ function resetTaskDay() {
   saveTaskState();
   renderAll();
   showToast("체크와 작업량을 비웠어요");
+  noteTaskChange({ action: "reset_tasks" });
+}
+
+// ── 작업 목록·체크 상태 시트 공유 (공지와 같은 공유 시트의 '작업' 탭) ──
+const TASK_SYNC_FLAG_KEY = "daru_task_sheet_synced_v1";
+const taskSync = {
+  migrated: localStorage.getItem(TASK_SYNC_FLAG_KEY) === "1",
+  loading: false,
+  pending: [],
+  flushing: false,
+  needReload: false,
+  rev: 0,
+  error: ""
+};
+
+function noteTaskChange(op) {
+  taskSync.rev++;
+  if (op) queueTaskOp(op);
+}
+
+function sheetUrl(action) {
+  return SHEET_ENDPOINT +
+    (SHEET_ENDPOINT.indexOf("?") >= 0 ? "&" : "?") +
+    "action=" + action + "&ts=" + Date.now();
+}
+
+async function sheetGet(action) {
+  const res = await fetch(sheetUrl(action), { method: "GET", cache: "no-store" });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const out = await res.json();
+  if (!out || !out.ok) throw new Error((out && out.error) || "불러오기 실패");
+  return out;
+}
+
+async function sheetPost(payload) {
+  const res = await fetch(SHEET_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  const out = await res.json();
+  if (!out) throw new Error("저장 실패");
+  return out;
+}
+
+function localTaskPayload() {
+  return taskList.map(t => {
+    const e = getTaskEntry(t.id);
+    return { id: t.id, name: t.name, qty: e.qty, unit: e.unit, checked: e.checked };
+  });
+}
+
+function applySheetTasks(list) {
+  const rows = (Array.isArray(list) ? list : [])
+    .map(t => ({
+      id: String((t && t.id) || "").trim() || `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: String((t && t.name) || "").trim(),
+      qty: Math.max(0, Number(t && t.qty) || 0),
+      unit: String((t && t.unit) || ""),
+      checked: !!(t && t.checked)
+    }))
+    .filter(t => t.name);
+
+  taskList = rows.map(({ id, name }) => ({ id, name }));
+  Object.keys(taskState).forEach(k => delete taskState[k]);
+  rows.forEach(t => {
+    if (t.qty || t.unit || t.checked) taskState[t.id] = { qty: t.qty, unit: t.unit, checked: t.checked };
+  });
+  saveState();
+  if (isTask()) { renderTaskList(); renderTaskBottom(); }
+}
+
+async function queueTaskOp(payload) {
+  if (!/\/exec$/.test(SHEET_ENDPOINT)) return;
+  const q = taskSync.pending;
+  if (payload.action === "update_task" && q.length) {
+    const last = q[q.length - 1];
+    if (last.action === "update_task" && last.id === payload.id) {
+      q[q.length - 1] = Object.assign({}, last, payload);
+      flushTaskOps();
+      return;
+    }
+  }
+  q.push(payload);
+  flushTaskOps();
+}
+
+async function flushTaskOps(quiet) {
+  if (taskSync.flushing) return taskSync.pending.length === 0;
+  taskSync.flushing = true;
+  let ok = true;
+  try {
+    while (taskSync.pending.length) {
+      const op = taskSync.pending[0];
+      let out;
+      try {
+        out = await sheetPost(op);
+      } catch (err) {
+        console.error(err);
+        taskSync.error = "시트에 저장하지 못했어요";
+        ok = false;
+        break;
+      }
+      taskSync.pending.shift();
+      if (out && out.ok) { taskSync.error = ""; continue; }
+      // 서버가 거절(다른 사람이 지운 작업 등) → 그 동작은 버리고 시트 상태를 다시 받는다
+      taskSync.error = (out && out.error) || "저장 실패";
+      if (out && (out.missing || out.duplicate)) taskSync.needReload = true;
+    }
+  } finally {
+    taskSync.flushing = false;
+    renderTaskBottom();
+    if (!ok && !quiet && isTask()) showToast("작업 공유가 잠시 지연되고 있어요");
+  }
+  if (taskSync.needReload) {
+    taskSync.needReload = false;
+    loadTasksFromSheet({ quiet: true });
+  }
+  return ok;
+}
+
+async function loadTasksFromSheet(opts = {}) {
+  if (!/\/exec$/.test(SHEET_ENDPOINT)) return;
+  if (taskSync.loading) return;
+  taskSync.loading = true;
+  renderTaskBottom();
+  const revAtStart = taskSync.rev;
+  try {
+    if (!(await flushTaskOps(true))) return;
+    let remote = ((await sheetGet("tasks")).tasks) || [];
+
+    if (!taskSync.migrated) {
+      const local = localTaskPayload();
+      const remoteNames = new Set(remote.map(t => String(t.name)));
+      const localOnly = local.filter(t => !remoteNames.has(t.name));
+      if (localOnly.length) {
+        // 이 폰에만 있던 작업은 버리지 않고 시트에 합쳐 올린다 (폰마다 최초 1회)
+        const out = await sheetPost({ action: "save_tasks", tasks: remote.concat(localOnly) });
+        if (!out || !out.ok) throw new Error((out && out.error) || "올리기 실패");
+        remote = out.tasks || remote.concat(localOnly);
+      }
+      localStorage.setItem(TASK_SYNC_FLAG_KEY, "1");
+      taskSync.migrated = true;
+    }
+
+    // 불러오는 동안 내가 고친 게 있으면 그대로 두고 다음에 다시 맞춘다
+    if (taskSync.rev === revAtStart && !taskSync.pending.length) {
+      applySheetTasks(remote);
+      taskSync.error = "";
+    }
+  } catch (err) {
+    console.error(err);
+    taskSync.error = "작업 공유를 불러오지 못했어요";
+    if (!opts.quiet && isTask()) showToast("작업 공유를 불러오지 못했어요");
+  } finally {
+    taskSync.loading = false;
+    renderTaskBottom();
+  }
 }
 
 function getEntry(id) {
@@ -1525,10 +1694,14 @@ function renderTaskList() {
 }
 
 function renderTaskBottom() {
+  const el = document.getElementById("taskSummary");
+  if (!el) return;
   const total = taskList.length;
   const done = taskList.filter(t => getTaskEntry(t.id).checked).length;
-  document.getElementById("taskSummary").innerHTML =
-    `전체 <b>${total}</b>개 · 체크 <b>${done}</b>개`;
+  let tail = "";
+  if (taskSync.loading) tail = ` <span class="task-sync">불러오는 중…</span>`;
+  else if (taskSync.error) tail = ` <span class="task-sync err">공유 지연 · 눌러서 다시</span>`;
+  el.innerHTML = `전체 <b>${total}</b>개 · 체크 <b>${done}</b>개${tail}`;
 }
 
 function renderBottom() {
@@ -1576,6 +1749,7 @@ function setMode(next) {
   searchClear.style.display = "none";
   renderModeUi();
   renderAll();
+  if (isTask()) loadTasksFromSheet({ quiet: true });
 }
 
 function renderAll() {
@@ -1641,6 +1815,12 @@ document.getElementById("btnReset").onclick = () => {
 
 document.getElementById("btnCopyAll").onclick = () => openPreview(null);
 document.getElementById("btnCopyGroup").onclick = () => openPreview(activeGroup);
+
+// 작업 탭 아래 요약을 누르면 시트의 최신 목록을 다시 받아 온다
+document.getElementById("taskSummary").onclick = () => {
+  if (!isTask() || taskSync.loading) return;
+  loadTasksFromSheet();
+};
 
 // ── 미리보기 모달 (복사는 모달에서 한 번 더) ──
 function openPreview(filterGroup = null) {
@@ -2057,6 +2237,16 @@ document.getElementById("confirmAdd").onclick = () => {
 renderModeUi();
 renderHeaderDate();
 renderAll();
+loadTasksFromSheet({ quiet: true });   // 다른 사람이 바꾼 작업 목록을 조용히 먼저 받아 둔다
+
+// 다른 앱에서 돌아올 때도 최신 작업 목록을 맞춘다
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !isTask()) return;
+  const el = document.activeElement;
+  if (el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) return;
+  if (document.body.classList.contains("edit-mode")) return;
+  loadTasksFromSheet({ quiet: true });
+});
 </script>
 </body>
 </html>
