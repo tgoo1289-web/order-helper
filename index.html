@@ -1306,7 +1306,7 @@ async function flushTaskOps(quiet) {
   }
   if (taskSync.needReload) {
     taskSync.needReload = false;
-    loadTasksFromSheet({ quiet: true });
+    if (!taskSync.loading) loadTasksFromSheet({ quiet: true });
   }
   return ok;
 }
